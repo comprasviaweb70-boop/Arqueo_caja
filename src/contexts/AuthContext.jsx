@@ -59,7 +59,8 @@ export const AuthProvider = ({ children }) => {
         throw new Error('El nombre de usuario ya está registrado');
       }
 
-      const rol = formattedNombre.toLowerCase() === 'jsanz' ? 'admin' : 'cajero';
+      const adminUsers = ['jsanz', 'julian sanz'];
+      const rol = adminUsers.includes(formattedNombre.toLowerCase()) ? 'admin' : 'cajero';
       const salt = bcrypt.genSaltSync(10);
       const contraseña_hash = bcrypt.hashSync(contraseña, salt);
 

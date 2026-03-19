@@ -20,7 +20,61 @@ const PrintReceipt = ({ data }) => {
   const dateObj = fecha ? new Date(fecha) : new Date();
 
   return (
-    <div className="hidden print:block print-thermal-receipt">
+    <div className="print-thermal-receipt">
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media screen {
+          .print-thermal-receipt { display: none; }
+        }
+        @media print {
+          @page { margin: 0; size: 80mm auto; }
+          html, body, #root, [class*="min-h-screen"], main, div {
+            background: #fff !important;
+            background-color: #fff !important;
+            background-image: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            height: auto !important;
+            min-height: 0 !important;
+            color: #000 !important;
+            font-weight: normal !important;
+          }
+          
+          /* Esconder todo lo demás con DISPLAY NONE */
+          body > *:not(.print-thermal-receipt):not(script):not(style) {
+            display: none !important;
+          }
+          
+          /* Asegurar que el contenedor del recibo esté visible y limpio */
+          .print-thermal-receipt {
+            display: block !important;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 80mm !important;
+            padding: 4mm !important;
+            background: #fff !important;
+            color: #000 !important;
+            font-family: "Arial Black", Arial, sans-serif !important;
+            font-size: 14px !important;
+            line-height: 1.3 !important;
+            text-align: left !important;
+          }
+
+          .print-thermal-receipt * {
+            color: #000 !important;
+            background: transparent !important;
+            font-weight: 900 !important;
+            -webkit-text-stroke: 0.8px #000;
+          }
+
+          .print-thermal-receipt h1 { font-size: 20px !important; margin-bottom: 8px !important; text-align: center !important; }
+          .print-thermal-receipt h3 { font-size: 16px !important; margin-top: 10px !important; margin-bottom: 5px !important; }
+          
+          .print-border-dashed { border-bottom: 2px dashed #000 !important; margin: 8px 0 !important; }
+          .print-border-top-dashed { border-top: 2px dashed #000 !important; margin: 8px 0 !important; padding-top: 8px !important; }
+        }
+      `}} />
+
       <div className="text-center mb-3">
         <h1 className="font-bold text-xl uppercase tracking-widest mb-1">ARQUEO DE CAJA IM</h1>
       </div>

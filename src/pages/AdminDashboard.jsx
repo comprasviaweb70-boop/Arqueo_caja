@@ -11,9 +11,12 @@ import Header from '@/components/Header';
 
 const AdminDashboard = () => {
   const [arqueos, setArqueos] = useState([]);
+  const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   const [selectedArqueo, setSelectedArqueo] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('arqueos');
   const { toast } = useToast();
 
   const fetchArqueos = async () => {
@@ -40,8 +43,56 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchUsuarios = async () => {
+    setLoadingUsers(true);
+    try {
+      const { data, error } = await supabase
+        .from('usuarios')
+        .select('id, nombre, rol, ultimo_acceso, created_at')
+        .order('nombre', { ascending: true });
+
+      if (error) throw error;
+      setUsuarios(data || []);
+    } catch (error) {
+      toast({
+        title: 'Error al cargar usuarios',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const eliminarUsuario = async (id, nombre) => {
+    if (confirm(`¿Estás seguro de que deseas eliminar al usuario "${nombre}"? Esta acción no se puede deshacer.`)) {
+      try {
+        const { error } = await supabase
+          .from('usuarios')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+
+        toast({
+          title: 'Usuario eliminado',
+          description: `El usuario ${nombre} ha sido eliminado correctamente.`,
+          className: 'bg-amber-500 text-slate-900 font-bold border-none'
+        });
+        fetchUsuarios();
+      } catch (error) {
+        toast({
+          title: 'Error al eliminar',
+          description: error.message,
+          variant: 'destructive',
+        });
+      }
+    }
+  };
+
   useEffect(() => {
     fetchArqueos();
+    fetchUsuarios();
   }, []);
 
   const exportarACSV = () => {
@@ -128,63 +179,151 @@ const AdminDashboard = () => {
             </Card>
           </div>
 
-          <Card className="glass overflow-hidden border-none">
-            <div className="overflow-x-auto">
-              {loading ? (
-                <div className="flex flex-col items-center justify-center py-16">
-                  <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                  <p className="text-slate-400 font-medium tracking-widest">CARGANDO DATOS...</p>
-                </div>
-              ) : arqueos.length === 0 ? (
-                <div className="text-center py-16">
-                  <FileText className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-                  <p className="text-slate-400 text-lg">No hay arqueos registrados en la base de datos</p>
-                </div>
-              ) : (
-                <table className="w-full min-w-[700px]">
-                  <thead className="bg-slate-900/60 border-b border-amber-500/30">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-amber-500 uppercase tracking-widest">Fecha / Hora</th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-amber-500 uppercase tracking-widest">Cajero</th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-amber-500 uppercase tracking-widest">Resumen Conteo</th>
-                      <th className="px-6 py-4 text-right text-xs font-bold text-amber-500 uppercase tracking-widest">Total General</th>
-                      <th className="px-6 py-4 text-center text-xs font-bold text-amber-500 uppercase tracking-widest">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/50 bg-slate-900/20">
-                    {arqueos.map((arqueo) => (
-                      <tr key={arqueo.id} className="hover:bg-slate-800/40 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300 font-medium">
-                          {new Date(arqueo.fecha).toLocaleString('es-CL')}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <User className="w-4 h-4 text-amber-500" />
-                            <span className="font-bold text-white">{arqueo.cajero}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="text-xs text-slate-300 bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-full font-medium tracking-wide">
-                            {formatearDenominaciones(arqueo.denominaciones || {})}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <span className="inline-flex items-center gap-1 font-black text-amber-400 text-lg tracking-wide">
-                            ${parseFloat(arqueo.total).toLocaleString('es-CL')}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <Button variant="ghost" size="sm" onClick={() => openDetails(arqueo)} className="text-amber-500 hover:text-slate-900 hover:bg-amber-500 font-bold transition-colors">
-                            <Eye className="w-4 h-4 mr-2" /> Detalles
-                          </Button>
-                        </td>
+          <div className="flex border-b border-amber-500/20 mb-6">
+            <button
+              onClick={() => setActiveTab('arqueos')}
+              className={`px-6 py-3 text-sm font-bold tracking-widest transition-all ${
+                activeTab === 'arqueos'
+                  ? 'text-amber-500 border-b-2 border-amber-500'
+                  : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              HISTORIAL DE ARQUEOS
+            </button>
+            <button
+              onClick={() => setActiveTab('usuarios')}
+              className={`px-6 py-3 text-sm font-bold tracking-widest transition-all ${
+                activeTab === 'usuarios'
+                  ? 'text-amber-500 border-b-2 border-amber-500'
+                  : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              GESTIONAR CAJEROS
+            </button>
+          </div>
+
+          {activeTab === 'arqueos' ? (
+            <Card className="glass overflow-hidden border-none">
+              <div className="overflow-x-auto">
+                {loading ? (
+                  <div className="flex flex-col items-center justify-center py-16">
+                    <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <p className="text-slate-400 font-medium tracking-widest">CARGANDO DATOS...</p>
+                  </div>
+                ) : arqueos.length === 0 ? (
+                  <div className="text-center py-16">
+                    <FileText className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+                    <p className="text-slate-400 text-lg">No hay arqueos registrados en la base de datos</p>
+                  </div>
+                ) : (
+                  <table className="w-full min-w-[700px]">
+                    <thead className="bg-slate-900/60 border-b border-amber-500/30">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-amber-500 uppercase tracking-widest">Fecha / Hora</th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-amber-500 uppercase tracking-widest">Cajero</th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-amber-500 uppercase tracking-widest">Resumen Conteo</th>
+                        <th className="px-6 py-4 text-right text-xs font-bold text-amber-500 uppercase tracking-widest">Total General</th>
+                        <th className="px-6 py-4 text-center text-xs font-bold text-amber-500 uppercase tracking-widest">Acciones</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </Card>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/50 bg-slate-900/20">
+                      {arqueos.map((arqueo) => (
+                        <tr key={arqueo.id} className="hover:bg-slate-800/40 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300 font-medium">
+                            {new Date(arqueo.fecha).toLocaleString('es-CL')}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              <User className="w-4 h-4 text-amber-500" />
+                              <span className="font-bold text-white">{arqueo.cajero}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-xs text-slate-300 bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-full font-medium tracking-wide">
+                              {formatearDenominaciones(arqueo.denominaciones || {})}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <span className="inline-flex items-center gap-1 font-black text-amber-400 text-lg tracking-wide">
+                              ${parseFloat(arqueo.total).toLocaleString('es-CL')}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <Button variant="ghost" size="sm" onClick={() => openDetails(arqueo)} className="text-amber-500 hover:text-slate-900 hover:bg-amber-500 font-bold transition-colors">
+                              <Eye className="w-4 h-4 mr-2" /> Detalles
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </Card>
+          ) : (
+            <Card className="glass overflow-hidden border-none">
+              <div className="overflow-x-auto">
+                {loadingUsers ? (
+                  <div className="flex flex-col items-center justify-center py-16">
+                    <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <p className="text-slate-400 font-medium tracking-widest">CARGANDO CAJEROS...</p>
+                  </div>
+                ) : usuarios.length === 0 ? (
+                  <div className="text-center py-16">
+                    <User className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+                    <p className="text-slate-400 text-lg">No hay cajeros registrados</p>
+                  </div>
+                ) : (
+                  <table className="w-full min-w-[700px]">
+                    <thead className="bg-slate-900/60 border-b border-amber-500/30">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-amber-500 uppercase tracking-widest">Nombre</th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-amber-500 uppercase tracking-widest">Rol</th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-amber-500 uppercase tracking-widest">Último Acceso</th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-amber-500 uppercase tracking-widest">Fecha Registro</th>
+                        <th className="px-6 py-4 text-center text-xs font-bold text-amber-500 uppercase tracking-widest">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/50 bg-slate-900/20">
+                      {usuarios.map((usu) => (
+                        <tr key={usu.id} className="hover:bg-slate-800/40 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <User className="w-4 h-4 text-amber-500" />
+                              <span className="font-bold text-white uppercase">{usu.nombre}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-black tracking-widest uppercase ${usu.rol === 'admin' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-300 border border-slate-700'}`}>
+                              {usu.rol}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
+                            {usu.ultimo_acceso ? new Date(usu.ultimo_acceso).toLocaleString('es-CL') : 'Nunca'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
+                            {new Date(usu.created_at).toLocaleDateString('es-CL')}
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            {usu.rol !== 'admin' && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => eliminarUsuario(usu.id, usu.nombre)} 
+                                className="text-red-500 hover:text-white hover:bg-red-500 font-bold transition-colors"
+                              >
+                                Eliminar
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </Card>
+          )}
         </div>
       </div>
 
