@@ -19,7 +19,7 @@ const PRINT_STYLES = `
     .print-receipt-portal { display: none !important; }
   }
   @media print {
-    @page { margin: 3mm 6mm 3mm 3mm; size: 80mm auto; }
+    @page { margin: 0; size: 80mm auto; }
 
     html, body {
       background: #fff !important;
@@ -39,9 +39,9 @@ const PRINT_STYLES = `
     /* Show only the portal receipt (direct child of body) */
     .print-receipt-portal {
       display: block !important;
-      width: 80mm !important;
+      width: 72mm !important;
       margin: 0 !important;
-      padding: 2mm !important;
+      padding: 5mm 2mm 5mm 8mm !important; /* Top, Right, Bottom, Left */
       background: #fff !important;
       color: #000 !important;
       font-family: "Arial Black", Arial, Helvetica, sans-serif !important;
