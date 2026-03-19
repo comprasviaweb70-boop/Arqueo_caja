@@ -19,7 +19,7 @@ const PRINT_STYLES = `
     .print-receipt-portal { display: none !important; }
   }
   @media print {
-    @page { margin: 3mm 3mm 3mm 6mm; size: 80mm auto; }
+    @page { margin: 3mm 6mm 3mm 3mm; size: 80mm auto; }
 
     html, body {
       background: #fff !important;
