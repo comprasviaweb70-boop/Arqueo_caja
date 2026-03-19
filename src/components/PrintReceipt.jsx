@@ -1,5 +1,6 @@
 
 import React from 'react';
+import ReactDOM from 'react-dom';
 
 const DENOMINACIONES = [
   { valor: 20000, label: '$20.000' },
@@ -13,128 +14,145 @@ const DENOMINACIONES = [
   { valor: 10, label: '$10' },
 ];
 
+const PRINT_STYLES = `
+  @media screen {
+    .print-receipt-portal { display: none !important; }
+  }
+  @media print {
+    @page { margin: 3mm; size: 80mm auto; }
+
+    html, body {
+      background: #fff !important;
+      background-color: #fff !important;
+      background-image: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      height: auto !important;
+      min-height: 0 !important;
+    }
+
+    /* Hide the entire React app */
+    #root {
+      display: none !important;
+    }
+
+    /* Show only the portal receipt (direct child of body) */
+    .print-receipt-portal {
+      display: block !important;
+      width: 80mm !important;
+      margin: 0 !important;
+      padding: 2mm !important;
+      background: #fff !important;
+      color: #000 !important;
+      font-family: "Arial Black", Arial, Helvetica, sans-serif !important;
+      font-size: 14px !important;
+      font-weight: 900 !important;
+      line-height: 1.4 !important;
+    }
+
+    .print-receipt-portal * {
+      color: #000 !important;
+      background: transparent !important;
+      background-color: transparent !important;
+      font-weight: 900 !important;
+      text-shadow: none !important;
+      box-shadow: none !important;
+    }
+
+    .print-receipt-portal .receipt-title {
+      text-align: center;
+      font-size: 18px;
+      font-weight: 900;
+      margin-bottom: 6px;
+      letter-spacing: 2px;
+    }
+    .print-receipt-portal .receipt-divider {
+      border-top: 2px dashed #000;
+      margin: 6px 0;
+    }
+    .print-receipt-portal .receipt-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 3px 0;
+    }
+    .print-receipt-portal .receipt-total {
+      font-size: 16px;
+      font-weight: 900;
+      border-top: 2px solid #000;
+      padding-top: 6px;
+      margin-top: 6px;
+    }
+    .print-receipt-portal .receipt-signature {
+      text-align: center;
+      margin-top: 20px;
+      border-top: 1px solid #000;
+      width: 70%;
+      margin-left: auto;
+      margin-right: auto;
+      padding-top: 4px;
+      font-size: 12px;
+    }
+    .print-receipt-portal .receipt-footer {
+      text-align: center;
+      margin-top: 8px;
+      font-size: 11px;
+    }
+  }
+`;
+
 const PrintReceipt = ({ data }) => {
   if (!data) return null;
 
   const { cajero, unidades, total, cambios, fecha } = data;
   const dateObj = fecha ? new Date(fecha) : new Date();
 
-  return (
-    <div className="print-thermal-receipt">
-      <style dangerouslySetInnerHTML={{ __html: `
-        @media screen {
-          .print-thermal-receipt { display: none; }
-        }
-        @media print {
-          @page { margin: 0; size: 80mm auto; }
-          html, body, #root, [class*="min-h-screen"], main, div {
-            background: #fff !important;
-            background-color: #fff !important;
-            background-image: none !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            height: auto !important;
-            min-height: 0 !important;
-            color: #000 !important;
-            font-weight: normal !important;
-          }
-          
-          /* Esconder todo lo demás con DISPLAY NONE */
-          body > *:not(.print-thermal-receipt):not(script):not(style) {
-            display: none !important;
-          }
-          
-          /* Asegurar que el contenedor del recibo esté visible y limpio */
-          .print-thermal-receipt {
-            display: block !important;
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 80mm !important;
-            padding: 4mm !important;
-            background: #fff !important;
-            color: #000 !important;
-            font-family: "Arial Black", Arial, sans-serif !important;
-            font-size: 14px !important;
-            line-height: 1.3 !important;
-            text-align: left !important;
-          }
+  const receipt = (
+    <div className="print-receipt-portal">
+      <style dangerouslySetInnerHTML={{ __html: PRINT_STYLES }} />
 
-          .print-thermal-receipt * {
-            color: #000 !important;
-            background: transparent !important;
-            font-weight: 900 !important;
-            -webkit-text-stroke: 0.8px #000;
-          }
+      <div className="receipt-title">ARQUEO DE CAJA IM</div>
+      <div className="receipt-divider" />
 
-          .print-thermal-receipt h1 { font-size: 20px !important; margin-bottom: 8px !important; text-align: center !important; }
-          .print-thermal-receipt h3 { font-size: 16px !important; margin-top: 10px !important; margin-bottom: 5px !important; }
-          
-          .print-border-dashed { border-bottom: 2px dashed #000 !important; margin: 8px 0 !important; }
-          .print-border-top-dashed { border-top: 2px dashed #000 !important; margin: 8px 0 !important; padding-top: 8px !important; }
-        }
-      `}} />
+      <div className="receipt-row"><span>Fecha:</span><span>{dateObj.toLocaleDateString('es-CL')}</span></div>
+      <div className="receipt-row"><span>Hora:</span><span>{dateObj.toLocaleTimeString('es-CL')}</span></div>
+      <div className="receipt-row"><span>Cajero:</span><span>{cajero || 'N/A'}</span></div>
 
-      <div className="text-center mb-3">
-        <h1 className="font-bold text-xl uppercase tracking-widest mb-1">ARQUEO DE CAJA IM</h1>
-      </div>
-      
-      <div className="mb-3 print-border-dashed pb-2 text-sm space-y-1">
-        <div className="flex justify-between">
-          <span>Fecha:</span>
-          <span>{dateObj.toLocaleDateString('es-CL')}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Hora:</span>
-          <span>{dateObj.toLocaleTimeString('es-CL')}</span>
-        </div>
-        <div className="flex justify-between mt-1">
-          <span>Cajero:</span>
-          <span className="font-bold uppercase">{cajero || 'N/A'}</span>
-        </div>
-      </div>
+      <div className="receipt-divider" />
+      <div style={{ fontWeight: 900, marginBottom: '4px' }}>DETALLE EFECTIVO</div>
+      <div className="receipt-divider" />
 
-      <div className="mb-3 text-sm">
-        <h3 className="font-bold mb-2 print-border-dashed pb-1 uppercase">Detalle Efectivo</h3>
-        <div className="space-y-1">
-          {DENOMINACIONES.map(d => {
-            const cantidad = unidades?.[d.valor] || 0;
-            if (cantidad === 0) return null;
-            const subtotal = d.valor * cantidad;
-            return (
-              <div key={d.valor} className="flex justify-between">
-                <span>{d.label} <span className="mx-1">x</span> {cantidad}</span>
-                <span>${subtotal.toLocaleString('es-CL')}</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      {DENOMINACIONES.map(d => {
+        const cantidad = unidades?.[d.valor] || 0;
+        if (cantidad === 0) return null;
+        const subtotal = d.valor * cantidad;
+        return (
+          <div key={d.valor} className="receipt-row">
+            <span>{d.label} x {cantidad}</span>
+            <span>${subtotal.toLocaleString('es-CL')}</span>
+          </div>
+        );
+      })}
 
-      <div className="mb-3 print-border-top-dashed pt-2">
-        <div className="flex justify-between font-bold text-base">
-          <span>TOTAL GENERAL:</span>
-          <span>${total?.toLocaleString('es-CL') || 0}</span>
-        </div>
+      <div className="receipt-row receipt-total">
+        <span>TOTAL GENERAL:</span>
+        <span>${total?.toLocaleString('es-CL') || 0}</span>
       </div>
 
       {cambios && (
-        <div className="mb-3 print-border-top-dashed pt-2 text-sm">
-          <h3 className="font-bold mb-1 uppercase">Observaciones:</h3>
-          <p className="whitespace-pre-wrap">{cambios}</p>
-        </div>
+        <>
+          <div className="receipt-divider" />
+          <div style={{ fontWeight: 900, marginBottom: '4px' }}>OBSERVACIONES:</div>
+          <div>{cambios}</div>
+        </>
       )}
 
-      <div className="text-center mt-8 mb-2">
-        <div className="border-t border-black w-[80%] mx-auto mb-1"></div>
-        <p className="text-xs font-bold uppercase tracking-wider">Firma Cajero</p>
-      </div>
-      
-      <div className="text-center text-xs mt-4 mb-0">
-        <p>*** COMPROBANTE INTERNO ***</p>
-      </div>
+      <div className="receipt-signature">FIRMA CAJERO</div>
+      <div className="receipt-footer">*** COMPROBANTE INTERNO ***</div>
     </div>
   );
+
+  // Render directly into body, bypassing the dark app background
+  return ReactDOM.createPortal(receipt, document.body);
 };
 
 export default PrintReceipt;
